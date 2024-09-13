@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: FuteLove
+  datasource:
+    url: jdbc:mariadb://localhost:3306/futelove?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: org.mariadb.jdbc.Driver
+
+google:
+  cloud:
+    connection-timeout: 60000
+    read-timeout: 60000
+    security-key-file: rising-daylight-435322-s8-9febaddabd53.json
+    bucketName: fute-love-media
+
+opencv:
+  haarcascades-path: classpath:opencv/haarcascades/haarcascade_frontalface_alt.xml
