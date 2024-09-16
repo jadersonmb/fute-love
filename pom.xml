@@ -61,7 +61,7 @@
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
-            <version>3.1.4</version>
+            <version>3.3.3</version>
         </dependency>
 
         <dependency>
@@ -107,12 +107,23 @@
             <artifactId>google-api-client</artifactId>
             <version>2.7.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.cloud</groupId>
+            <artifactId>spring-cloud-gcp-starter</artifactId>
+            <version>5.6.0</version>
+        </dependency>
         <!-- google cloud end-->
         <!-- opencv -->
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacv-platform</artifactId>
             <version>1.5.10</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.bytedeco/opencv -->
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>opencv</artifactId>
+            <version>4.9.0-1.5.10</version>
         </dependency>
         <!-- opencv end-->
     </dependencies>

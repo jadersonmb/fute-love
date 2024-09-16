@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1/facial")
 @Data
@@ -20,6 +22,16 @@ public class FaceDetectionController {
     @PostMapping("/detect")
     public ResponseEntity<?> detectFaces(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(faceDetectionService.detectFacesOpenCV(file));
+    }
+
+    @GetMapping("/recognize")
+    public ResponseEntity<?> recognizeFace(@RequestParam("videoId") UUID videoId) {
+        return ResponseEntity.ok(faceDetectionService.recognizeFaceFromVideo(videoId));
+    }
+
+    @PostMapping("/process/video")
+    public ResponseEntity<?> processVideo(@RequestParam("file") MultipartFile file) throws Exception{
+        return ResponseEntity.ok(faceDetectionService.processVideo("C:\\Users\\Jaderson\\Documents\\FuteLove\\Videos\\Neymar.mp4"));
     }
 
     @ExceptionHandler({FuteLoveException.class})

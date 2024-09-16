@@ -16,7 +16,7 @@ public class GcpAuthApplicationTests {
     GCPAccessToken gcpAccessToken;
 
     @Test
-    public void shoulReturnTokenFromDirectFile() throws IOException {
+    public void returnToken() throws IOException {
         GoogleCredentials credentialDirectFile = gcpAccessToken.getCredentialDirectFile();
         /* instanciando o GoogleCredentials e chamando nosso metodo que usa o JSON para se autenticar */
         String accessToken = credentialDirectFile.getAccessToken().toString();

@@ -7,10 +7,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
-@AllArgsConstructor
 public class ImageMapper {
-
-    private UserMapper userMapper;
 
     public ImageDTO toDTO(Image entity){
         return ImageDTO.builder()

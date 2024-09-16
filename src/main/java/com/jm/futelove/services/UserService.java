@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-@AllArgsConstructor
 public class UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
@@ -29,6 +28,12 @@ public class UserService {
     private final UserRepository repository;
     private final UserMapper mapper;
     private final MessageSource messageSource;
+
+    public UserService(UserRepository repository, UserMapper mapper, MessageSource messageSource) {
+        this.repository = repository;
+        this.mapper = mapper;
+        this.messageSource = messageSource;
+    }
 
     public Page<UserDTO> findAll(Pageable pageable, UserDTO filter) throws FuteLoveException {
         return repository.findAll(UserSpeciation.search(filter), pageable).map(mapper::toDTO);
@@ -53,5 +58,9 @@ public class UserService {
         return mapper
                 .toDTO(obj.orElseThrow(() -> new FuteLoveException(HttpStatus.BAD_REQUEST.value(),
                         problemType.getTitle(), problemType.getUri(), messageDetails)));
+    }
+
+    public String getUserFromLabel(int i) {
+        return null;
     }
 }

@@ -8,6 +8,7 @@ import com.jm.futelove.execption.FuteLoveException;
 import com.jm.futelove.execption.ProblemType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -33,11 +34,12 @@ public class GoogleStorageService {
         this.imageService = imageService;
     }
 
+
     public ImageDTO uploadFile(@RequestParam("file") MultipartFile file,
-                               @RequestParam("profileId") UUID profileId) {
+                               @RequestParam("userId") UUID userId) {
         try {
 
-            UserDTO userDTO = userService.findById(profileId);
+            UserDTO userDTO = userService.findById(userId);
 
 
             logger.info("Starting to uploading file: " + file.getOriginalFilename());

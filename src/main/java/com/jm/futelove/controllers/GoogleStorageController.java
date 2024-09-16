@@ -1,5 +1,6 @@
 package com.jm.futelove.controllers;
 
+import com.jm.futelove.dto.ImageDTO;
 import com.jm.futelove.services.GoogleStorageService;
 import com.jm.futelove.execption.FuteLoveException;
 import com.jm.futelove.execption.Problem;
@@ -28,13 +29,13 @@ public class GoogleStorageController {
     /***
      * Método para fazer o upload de um arquivo para o Google Cloud Storage
      * @param file
-     * @param profileId
+     * @param userId
      * @return
      */
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file,
-                                        @RequestParam("profileId") UUID profileId) {
-        return ResponseEntity.ok(googleStorageService.uploadFile(file, profileId));
+                                        @RequestParam("userId") UUID userId) {
+        return ResponseEntity.ok(googleStorageService.uploadFile(file, userId));
     }
 
     /***
