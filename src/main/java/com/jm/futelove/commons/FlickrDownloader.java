@@ -14,8 +14,8 @@ import java.net.URL;
 
 public class FlickrDownloader {
 
-    private static final String FLICKR_API_KEY = "c2b764de47675e9cca91658845ba1cac";
-    private static final String FLICKR_API_SECRET = "25a803173cf4e397";
+    private static final String FLICKR_API_KEY = "";
+    private static final String FLICKR_API_SECRET = "";
 
     private final Flickr flickr;
 
