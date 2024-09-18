@@ -29,9 +29,13 @@ public class FaceDetectionController {
     public ResponseEntity<?> recognizeFace(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(faceDetectionService.recognizeFaceFromVideo(file));
     }
+    @PostMapping("/recognize/image")
+    public ResponseEntity<?> recognizeFaceImage(@RequestParam("file") MultipartFile file) throws IOException {
+        return ResponseEntity.ok(faceDetectionService.recognizeImage(file));
+    }
 
     @PostMapping("/train/model/{userId}")
-    public ResponseEntity<?> trainModel(@PathVariable UUID userId) throws IOException {
+    public ResponseEntity<?> trainModel(@PathVariable UUID userId) throws Exception {
         return ResponseEntity.ok(faceDetectionService.trainModel(userId));
     }
 

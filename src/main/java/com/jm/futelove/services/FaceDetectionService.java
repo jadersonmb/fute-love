@@ -1,6 +1,9 @@
 package com.jm.futelove.services;
 
+import com.flickr4java.flickr.photos.Photo;
+import com.flickr4java.flickr.photos.PhotoList;
 import com.jm.futelove.commons.Commons;
+import com.jm.futelove.commons.FlickrDownloader;
 import com.jm.futelove.commons.VideoFrameDisplay;
 import com.jm.futelove.controllers.GoogleStorageController;
 import com.jm.futelove.entity.Image;
@@ -9,6 +12,7 @@ import com.jm.futelove.execption.FuteLoveException;
 import com.jm.futelove.execption.ProblemType;
 import com.jm.futelove.execption.Response;
 import lombok.SneakyThrows;
+import org.apache.logging.log4j.util.Strings;
 import org.bytedeco.opencv.global.opencv_core;
 import org.bytedeco.opencv.global.opencv_imgcodecs;
 import org.bytedeco.opencv.global.opencv_imgproc;
@@ -25,8 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.swing.*;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -51,6 +53,7 @@ public class FaceDetectionService {
     private final UserService userService;
     private final ImageService imageService;
     private final VideoFrameDisplay frameDisplay = new VideoFrameDisplay();
+    private final FlickrDownloader flickrDownloader = new FlickrDownloader();
 
     public FaceDetectionService(UserService userService, ImageService imageService) {
         this.imageService = imageService;
@@ -84,10 +87,18 @@ public class FaceDetectionService {
         }
     }
 
+    public Response recognizeImage(@RequestParam("file") MultipartFile file) throws IOException {
+        this.faceRecognizer.read("user_model_Neymar.xml");
+        /* Realizar reconhecimento*/
+        handlerFaceRecognized(opencv_imgcodecs.imdecode(new Mat(file.getBytes()), opencv_imgcodecs.IMREAD_GRAYSCALE), new Rect(), new Mat());
+        return Response.
+                builder()
+                .status(HttpStatus.OK.value())
+                .message("Face recognized successfully").build();
+    }
+
     public Response processVideo(MultipartFile videoFilePath) {
-
         try {
-
             this.faceRecognizer.read("user_model_Neymar.xml");
 
             Path tempVideoPath = Files.createTempFile("neymar", ".mp4"); // ou outra extensão de vídeo apropriada
@@ -113,21 +124,16 @@ public class FaceDetectionService {
                 faceDetector.detectMultiScale(grayFrame, faceDetections);
 
                 for (Rect rect : faceDetections.get()) {
-                    /* Desenhar o retângulo ao redor do rosto ou fazer o reconhecimento facial */
-                    opencv_imgproc.rectangle(frame, new Point(rect.x(), rect.y()), new Point(rect.x() + rect.width(), rect.y() + rect.height()), new Scalar(0, 255, 0, 0));
-
-
                     /* Recortar a região do rosto para reconhecimento
                      * logger.info("Face detected: " + rect); */
                     Mat face = new Mat(grayFrame, rect);
 
                     /* Redimensionar para o tamanho esperado pelo modelo treinado */
                     opencv_imgproc.resize(face, face, new Size(200, 200));
-                    handlerFaceRecognized(face);
+                    handlerFaceRecognized(face, rect, frame);
                     /*opencv_highgui.imshow("Face Detection", frame);*/
                 }
                 frameDisplay.showInFrame(frame);
-                Thread.sleep(90); // Tempo de pausa entre cada frame
             }
             videoCapture.release();
 
@@ -140,34 +146,7 @@ public class FaceDetectionService {
     }
 
     @SneakyThrows
-    private Path getTempFileFrontalFaceXml() {
-        Path tempFile = Files.createTempFile("haarcascade_frontalface_alt", ".xml");
-        try (InputStream xmlStream = xmlResource.getInputStream()) {
-            Files.copy(xmlStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            logger.error("Error creating temp file: " + e.getMessage());
-            ProblemType problemType = ProblemType.ERROR_FACE_DETECTED;
-            throw new FuteLoveException(HttpStatus.BAD_REQUEST.value(), problemType.getUri(), problemType.getTitle(), "Error creating temp file frontal face: " + e.getMessage());
-        }
-        return tempFile;
-    }
-
-    public Response recognizeFaceFromVideo(MultipartFile videoFilePath) {
-        return processVideo(videoFilePath);
-    }
-
-    private void handlerFaceRecognized(Mat img) {
-        /* Realizar reconhecimento*/
-        int[] predictedLabel = new int[1];
-        double[] confidence = new double[1];
-        faceRecognizer.predict(img, predictedLabel, confidence);
-        if (confidence[0] < 0.3) {
-            User userName = userService.getUserFromLabel(predictedLabel[0]);
-            logger.info("Face detected: " + userName.getName() + " with confidant: " + confidence);
-        }
-    }
-
-    public Response trainModel(UUID userId) throws FuteLoveException, IOException {
+    public Response trainModel(UUID userId) {
         User user = userService.findEntityById(userId);
         int hashCodeUser = user.getId().hashCode();
         List<Image> userImages = imageService.findByUserId(userId);
@@ -181,6 +160,7 @@ public class FaceDetectionService {
         List<Integer> labels = new ArrayList<>();
 
         /*getAllImgByUserForTrain(user, imageMats, labels);*/
+        /*getImgFromInternet("neymar", imageMats, labels, user);*/
 
         for (Image img : userImages) {
             Mat imageMat = opencv_imgcodecs.imdecode(new Mat(Commons.downloadImageStorageByFileName(BUCKET_NAME, img.getFileName())), opencv_imgcodecs.IMREAD_GRAYSCALE);
@@ -190,7 +170,7 @@ public class FaceDetectionService {
 
             imageMats.add(resizedMat);
             labels.add(user.getId().hashCode());
-        }
+        };
 
         user.setHashCode(hashCodeUser);
         userService.updateUserEntity(user);
@@ -214,6 +194,52 @@ public class FaceDetectionService {
         return Response.builder().status(HttpStatus.OK.value()).message("Model training successfully for user: " + user.getName()).build();
     }
 
+    private void getImgFromInternet(String query, List<Mat> imageMats, List<Integer> labels, User user) {
+        PhotoList<Photo> photos = flickrDownloader.getImageWithQuery(query, 50);
+        photos.forEach(photo -> {
+            try {
+                Mat imageMat = opencv_imgcodecs.imdecode(new Mat(flickrDownloader.downloadImageAsBytes(photo.getMediumUrl())), opencv_imgcodecs.IMREAD_GRAYSCALE);
+                Mat resizedMat = new Mat();
+                opencv_imgproc.resize(imageMat, resizedMat, new Size(200, 200));
+
+                imageMats.add(imageMat);
+                labels.add(user.getId().hashCode());
+            } catch (Exception e) {
+                logger.error("Error to download image: " + e.getMessage());
+            }
+        });
+    }
+
+    public Response recognizeFaceFromVideo(MultipartFile videoFilePath) {
+        return processVideo(videoFilePath);
+    }
+
+    private void handlerFaceRecognized(Mat img, Rect rect, Mat frame) {
+        /* Realizar reconhecimento*/
+        int[] predictedLabel = new int[1];
+        double[] confidence = new double[1];
+        faceRecognizer.predict(img, predictedLabel, confidence);
+        if (confidence[0] > 50.0) {
+            opencv_imgproc.rectangle(frame, new Point(rect.x(), rect.y()), new Point(rect.x() + rect.width(), rect.y() + rect.height()), new Scalar(0, 255, 0, 0));
+            User userName = userService.getUserFromLabel(predictedLabel[0]);
+            logger.info("Face detected: " + userName.getName() + " with confidant: " + confidence[0]);
+        }
+    }
+
+    @SneakyThrows
+    private Path getTempFileFrontalFaceXml() {
+        Path tempFile = Files.createTempFile("haarcascade_frontalface_alt", ".xml");
+        try (InputStream xmlStream = xmlResource.getInputStream()) {
+            Files.copy(xmlStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            logger.error("Error creating temp file: " + e.getMessage());
+            ProblemType problemType = ProblemType.ERROR_FACE_DETECTED;
+            throw new FuteLoveException(HttpStatus.BAD_REQUEST.value(), problemType.getUri(), problemType.getTitle(), "Error creating temp file frontal face: " + e.getMessage());
+        }
+        return tempFile;
+    }
+
+
     private void getAllImgByUserForTrain(User user, List<Mat> imageMats, List<Integer> labels) throws IOException {
         Commons.downloadImageStorageByFolder(BUCKET_NAME, user.getId().toString()).forEach(imageBytes -> {
             Mat imageMat = opencv_imgcodecs.imdecode(new Mat(imageBytes), opencv_imgcodecs.IMREAD_GRAYSCALE);
@@ -221,13 +247,15 @@ public class FaceDetectionService {
             Mat resizedMat = new Mat();
             opencv_imgproc.resize(imageMat, resizedMat, new Size(200, 200));
 
+            /*frameDisplay.showInFrame(imageMat);*/
+
             imageMats.add(imageMat);
             labels.add(user.getId().hashCode());
         });
     }
 
     private void saveTrainedModel(String userName) {
-        String filePath = "user_model_" + userName + ".xml";
+        String filePath = "user_model_" + Strings.toRootLowerCase(userName) + ".xml";
         faceRecognizer.save(filePath);
     }
 }

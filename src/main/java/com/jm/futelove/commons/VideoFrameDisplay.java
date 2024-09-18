@@ -21,30 +21,17 @@ public class VideoFrameDisplay {
         });
     }
 
-    public void updateImage(BufferedImage img) {
+    public void showInFrame(Mat mat) {
         SwingUtilities.invokeLater(() -> {
             if (imageLabel != null) {
-                ImageIcon icon = new ImageIcon(img);
+                BufferedImage bufferedImage = matToBufferedImage(mat);
+                ImageIcon icon = new ImageIcon(bufferedImage);
                 imageLabel.setIcon(icon);
+                imageLabel.repaint();
                 frame.pack();
             } else {
                 System.err.println("imageLabel is not initialized");
             }
-        });
-    }
-
-    public void showInFrame(Mat mat) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame mediaFrame = new JFrame("Media");
-            mediaFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            mediaFrame.setSize(800, 600);
-
-            BufferedImage bufferedImage = matToBufferedImage(mat);
-            ImageIcon imageIcon = new ImageIcon(bufferedImage);
-            JLabel label = new JLabel("", imageIcon, JLabel.CENTER);
-
-            mediaFrame.add(label);
-            mediaFrame.setVisible(true);
         });
     }
 

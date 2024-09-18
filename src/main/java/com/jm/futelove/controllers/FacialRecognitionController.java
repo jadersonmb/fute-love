@@ -107,7 +107,7 @@ public class FacialRecognitionController {
     }
 
     /* Endpoint para reconhecimento facial*/
-    @PostMapping("/recognize")
+    @PostMapping("/recognize/image")
     public ResponseEntity<?> recognizeImage(@RequestParam("file") MultipartFile file) {
         try {
             /* Carregar a imagem enviada para reconhecimento*/
