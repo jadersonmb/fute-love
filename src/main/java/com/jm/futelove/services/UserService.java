@@ -60,6 +60,14 @@ public class UserService {
                         problemType.getTitle(), problemType.getUri(), messageDetails)));
     }
 
+    public User findEntityById(UUID id) throws FuteLoveException {
+        ProblemType problemType = ProblemType.USER_NOT_EXISTS;
+        Optional<User> obj = repository.findById(id);
+        String messageDetails = messageSource.getMessage(problemType.getMessageSource(), new Object[]{""}, LocaleContextHolder.getLocale());
+        return obj.orElseThrow(() -> new FuteLoveException(HttpStatus.BAD_REQUEST.value(),
+                        problemType.getTitle(), problemType.getUri(), messageDetails));
+    }
+
     public String getUserFromLabel(int i) {
         return null;
     }

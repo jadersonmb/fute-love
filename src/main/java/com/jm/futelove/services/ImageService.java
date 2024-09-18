@@ -8,6 +8,7 @@ import com.jm.futelove.repository.ImageRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -30,5 +31,9 @@ public class ImageService {
         entity.setUser(userService.findByEntityId(entity.getId()));
 
         return mapper.toDTO(entity);
+    }
+
+    public List<Image> findByUserId(UUID userId) {
+        return repository.findByUserId(userId);
     }
 }

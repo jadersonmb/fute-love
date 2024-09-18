@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.UUID;
 
 @RestController
@@ -24,14 +25,14 @@ public class FaceDetectionController {
         return ResponseEntity.ok(faceDetectionService.detectFacesOpenCV(file));
     }
 
-    @GetMapping("/recognize")
-    public ResponseEntity<?> recognizeFace(@RequestParam("videoId") UUID videoId) {
-        return ResponseEntity.ok(faceDetectionService.recognizeFaceFromVideo(videoId));
+    @PostMapping("/recognize")
+    public ResponseEntity<?> recognizeFace(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(faceDetectionService.recognizeFaceFromVideo(file));
     }
 
-    @PostMapping("/process/video")
-    public ResponseEntity<?> processVideo(@RequestParam("file") MultipartFile file) throws Exception{
-        return ResponseEntity.ok(faceDetectionService.processVideo("C:\\Users\\Jaderson\\Documents\\FuteLove\\Videos\\Neymar.mp4"));
+    @PostMapping("/train/model/{userId}")
+    public ResponseEntity<?> trainModel(@PathVariable UUID userId) throws IOException {
+        return ResponseEntity.ok(faceDetectionService.trainModel(userId));
     }
 
     @ExceptionHandler({FuteLoveException.class})

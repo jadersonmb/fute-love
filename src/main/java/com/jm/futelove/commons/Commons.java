@@ -1,46 +1,50 @@
 package com.jm.futelove.commons;
 
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Bucket;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
+import com.jm.futelove.controllers.GoogleStorageController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Commons {
 
-    public static org.bytedeco.opencv.opencv_core.Mat convertMatOpenCoreCV(org.opencv.core.Mat opencvMat) {
-        int rows = opencvMat.rows();
-        int cols = opencvMat.cols();
-        int type = opencvMat.type();
-        int channels = opencvMat.channels();
-        int elemSize = (int) opencvMat.elemSize();
-        int size = rows * cols * elemSize;
+    private static final Logger logger = LoggerFactory.getLogger(Commons.class);
 
-        ByteBuffer byteBuffer = ByteBuffer.allocate(size);
-        opencvMat.get(0, 0, byteBuffer.array());
-
-        org.bytedeco.opencv.opencv_core.Mat javaCPP_Mat = new org.bytedeco.opencv.opencv_core.Mat(rows, cols, type);
-
-        byteBuffer.rewind();
-        javaCPP_Mat.data().put(byteBuffer.array());
-
-        return javaCPP_Mat;
+    public static byte[] downloadImageStorageByFileName(String bucketName, String objectName) throws IOException {
+        Storage storage = StorageOptions.getDefaultInstance().getService();
+        Blob blob = storage.get(bucketName, objectName);
+        if (blob == null) {
+            throw new IOException("The file was not found in the bucket.");
+        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        blob.downloadTo(baos);
+        return baos.toByteArray();
     }
 
-    public static org.opencv.core.Mat convertToOpenCVMat(org.bytedeco.opencv.opencv_core.Mat javaCPPMat) {
-        int rows = javaCPPMat.rows();
-        int cols = javaCPPMat.cols();
-        int type = javaCPPMat.type();
-        int elemSize = (int) javaCPPMat.elemSize(); // Tamanho do elemento em bytes
-        int channels = javaCPPMat.channels();
+    public static List<byte[]> downloadImageStorageByFolder(String bucketName, String folderName) throws IOException {
+        Storage storage = StorageOptions.getDefaultInstance().getService();
 
-        org.opencv.core.Mat opencvMat = new org.opencv.core.Mat(rows, cols, type);
+        List<byte[]> images = new ArrayList<>();
+        Bucket bucket = storage.get(bucketName);
 
-        ByteBuffer byteBuffer = ByteBuffer.allocate(rows * cols * channels * elemSize);
-        byteBuffer.order(ByteOrder.nativeOrder()); // Configura a ordem dos bytes para a plataforma nativa
+        String prefix = folderName.endsWith("/") ? folderName : folderName + "/";
 
-        byteBuffer.put(javaCPPMat.data().asByteBuffer().array());
-
-        opencvMat.put(0, 0, byteBuffer.array());
-
-        return opencvMat;
+        for (Blob blob : bucket.list(Storage.BlobListOption.prefix(prefix)).iterateAll()) {
+            if (!blob.isDirectory()) {
+                logger.info("Downloading: " + blob.getName());
+                byte[] imageBytes = blob.getContent();
+                images.add(imageBytes);
+            }
+        }
+        return images;
     }
-
 }
