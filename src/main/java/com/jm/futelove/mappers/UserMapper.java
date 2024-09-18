@@ -23,5 +23,11 @@ public class UserMapper {
                 .build();
     }
 
+    public User toUpdate(User entity) {
+        entity.setName(entity.getName());
+        entity.setHashCode(entity.getHashCode());
+        return entity;
+    }
+
 }
 

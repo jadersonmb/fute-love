@@ -36,4 +36,8 @@ public class ImageService {
     public List<Image> findByUserId(UUID userId) {
         return repository.findByUserId(userId);
     }
+
+    public void updateImage(Image entity) {
+        repository.saveAndFlush(entity);
+    }
 }

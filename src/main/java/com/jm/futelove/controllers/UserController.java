@@ -1,7 +1,6 @@
 package com.jm.futelove.controllers;
 
 import com.jm.futelove.dto.UserDTO;
-import com.jm.futelove.entity.User;
 import com.jm.futelove.execption.FuteLoveException;
 import com.jm.futelove.execption.Problem;
 import com.jm.futelove.services.UserService;
@@ -43,10 +42,10 @@ public class UserController {
     public ResponseEntity<?> update(@RequestBody UserDTO userDTO) {
         logger.debug("REST request to update User : {}", userDTO);
 
-        UserDTO accountSaveDTO = userService.findById(userDTO.getId());
-        if(Objects.nonNull(accountSaveDTO.getId())) {
-            BeanUtils.copyProperties(userDTO, accountSaveDTO, "id");
-            userService.createUser(accountSaveDTO);
+        UserDTO userSaveDTO = userService.findById(userDTO.getId());
+        if(Objects.nonNull(userSaveDTO.getId())) {
+            BeanUtils.copyProperties(userDTO, userSaveDTO, "id");
+            userService.createUser(userSaveDTO);
         }
         return ResponseEntity.ok().build();
     }

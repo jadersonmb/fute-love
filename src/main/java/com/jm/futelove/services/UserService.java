@@ -65,10 +65,18 @@ public class UserService {
         Optional<User> obj = repository.findById(id);
         String messageDetails = messageSource.getMessage(problemType.getMessageSource(), new Object[]{""}, LocaleContextHolder.getLocale());
         return obj.orElseThrow(() -> new FuteLoveException(HttpStatus.BAD_REQUEST.value(),
-                        problemType.getTitle(), problemType.getUri(), messageDetails));
+                problemType.getTitle(), problemType.getUri(), messageDetails));
     }
 
-    public String getUserFromLabel(int i) {
-        return null;
+    public UserDTO updateUser(UserDTO dto) {
+        return mapper.toDTO(repository.save(mapper.toEntity(dto)));
+    }
+
+    public UserDTO updateUserEntity(User entity) {
+        return mapper.toDTO(repository.save(mapper.toUpdate(entity)));
+    }
+
+    public User getUserFromLabel(int hasCode) {
+        return repository.findByHashCode(hasCode);
     }
 }

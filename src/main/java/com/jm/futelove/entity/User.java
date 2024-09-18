@@ -35,8 +35,8 @@ public class User {
     private UUID id;
 
     private String name;
-
     private String email;
+    private int hashCode;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Image> imagens = new ArrayList<>();
