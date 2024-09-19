@@ -47,6 +47,8 @@ public class FaceDetectionService {
     private Resource xmlResource;
     @Value("${google.cloud.bucketName}")
     private String BUCKET_NAME;
+    @Value("${opencv.show-video}")
+    private boolean isShowVideo = false;
 
     private LBPHFaceRecognizer faceRecognizer;
 
@@ -76,7 +78,7 @@ public class FaceDetectionService {
             RectVector faceDetections = new RectVector();
             faceDetector.detectMultiScale(image, faceDetections);
 
-            frameDisplay.showInFrame(image);
+            showInDisplay(image);
 
             return Response.builder().status(HttpStatus.OK.value()).message("Faces detectable: " + faceDetections.size()).build();
 
@@ -97,11 +99,11 @@ public class FaceDetectionService {
                 .message("Face recognized successfully").build();
     }
 
-    public Response processVideo(MultipartFile videoFilePath) {
+    public Response processVideo(MultipartFile videoFilePath, String filePathXml) {
         try {
-            this.faceRecognizer.read("user_model_Neymar.xml");
+            this.faceRecognizer.read(filePathXml);
 
-            Path tempVideoPath = Files.createTempFile("neymar", ".mp4"); // ou outra extensão de vídeo apropriada
+            Path tempVideoPath = Files.createTempFile("temp", ".mp4"); // ou outra extensão de vídeo apropriada
             Files.write(tempVideoPath, videoFilePath.getBytes());
 
             /* Abrir o vídeo */
@@ -133,7 +135,56 @@ public class FaceDetectionService {
                     handlerFaceRecognized(face, rect, frame);
                     /*opencv_highgui.imshow("Face Detection", frame);*/
                 }
-                frameDisplay.showInFrame(frame);
+                showInDisplay(frame);
+            }
+            videoCapture.release();
+
+            return Response.builder().status(HttpStatus.OK.value()).message("Video processed successfully").build();
+        } catch (Exception e) {
+            logger.error("Error to process video: " + e.getMessage());
+            ProblemType problemType = ProblemType.ERROR_VIDEO_PROCESS;
+            throw new FuteLoveException(HttpStatus.BAD_REQUEST.value(), problemType.getUri(), problemType.getTitle(), "Error to process video: " + videoFilePath);
+        }
+    }
+
+    public Response processVideoTrainByUser(MultipartFile videoFilePath, UUID userId) {
+        try {
+
+            User userEntity = userService.findEntityById(userId);
+
+            Path tempVideoPath = Files.createTempFile(userEntity.getName(), ".mp4");
+            Files.write(tempVideoPath, videoFilePath.getBytes());
+
+            /* Abrir o vídeo */
+            VideoCapture videoCapture = new VideoCapture(tempVideoPath.toString());
+            CascadeClassifier faceDetector = new CascadeClassifier(getTempFileFrontalFaceXml().toString());
+
+            if (!videoCapture.isOpened()) {
+                logger.info("Error opening video.");
+                throw new FuteLoveException(HttpStatus.BAD_REQUEST.value(), ProblemType.ERROR_FACE_DETECTED.getUri(), ProblemType.ERROR_FACE_DETECTED.getTitle(), "Error opening video");
+            }
+
+            Mat frame = new Mat();
+            Mat grayFrame = new Mat();
+            while (videoCapture.read(frame)) {
+                /* Converte a imagem para grayscale e adiciona à lista de imagens*/
+                opencv_imgproc.cvtColor(frame, grayFrame, opencv_imgproc.COLOR_BGR2GRAY);
+
+                /* Detectar rostos no frame */
+                RectVector faceDetections = new RectVector();
+                faceDetector.detectMultiScale(grayFrame, faceDetections);
+
+                for (Rect rect : faceDetections.get()) {
+                    /* Recortar a região do rosto para reconhecimento
+                     * logger.info("Face detected: " + rect); */
+                    Mat face = new Mat(grayFrame, rect);
+
+                    /* Redimensionar para o tamanho esperado pelo modelo treinado */
+                    opencv_imgproc.resize(face, face, new Size(200, 200));
+                    trainModelByVideoAndByUser(face, userId);
+                    /*handlerFaceRecognized(face, rect, frame);*/
+                }
+                showInDisplay(frame);
             }
             videoCapture.release();
 
@@ -146,7 +197,45 @@ public class FaceDetectionService {
     }
 
     @SneakyThrows
-    public Response trainModel(UUID userId) {
+    public Response trainModelByVideoAndByUser(Mat frame, UUID userId) {
+        User user = userService.findEntityById(userId);
+        int hashCodeUser = user.getId().hashCode();
+
+        List<Mat> imageMats = new ArrayList<>();
+        List<Integer> labels = new ArrayList<>();
+
+
+        /*Mat imageMat = opencv_imgcodecs.imdecode(new Mat(frame), opencv_imgcodecs.IMREAD_GRAYSCALE);*/
+
+        Mat resizedMat = new Mat();
+        opencv_imgproc.resize(frame, resizedMat, new Size(200, 200));
+
+        imageMats.add(resizedMat);
+        labels.add(user.getId().hashCode());
+
+        user.setHashCode(hashCodeUser);
+
+        /* Converter a lista de imagens para MatVector*/
+        MatVector images = new MatVector(imageMats.size());
+        for (int i = 0; i < imageMats.size(); i++) {
+            images.put(i, imageMats.get(i));
+        }
+
+        /* Converter a lista de labels para um Mat do tipo CV_32SC1 (inteiros de 32 bits)*/
+        Mat labelsMat = new Mat(labels.size(), 1, opencv_core.CV_32SC1);
+        for (int i = 0; i < labels.size(); i++) {
+            labelsMat.ptr(i).putInt(labels.get(i));
+        }
+
+        faceRecognizer.train(images, labelsMat);
+
+        saveTrainedModel(user.getName());
+
+        return Response.builder().status(HttpStatus.OK.value()).message("Model training by process video successfully for user: " + user.getName()).build();
+    }
+
+    @SneakyThrows
+    public Response trainModelByUserId(UUID userId) {
         User user = userService.findEntityById(userId);
         int hashCodeUser = user.getId().hashCode();
         List<Image> userImages = imageService.findByUserId(userId);
@@ -210,8 +299,10 @@ public class FaceDetectionService {
         });
     }
 
-    public Response recognizeFaceFromVideo(MultipartFile videoFilePath) {
-        return processVideo(videoFilePath);
+    public Response recognizeFaceFromVideo(MultipartFile videoFilePath, UUID userId) {
+        User user = userService.findEntityById(userId);
+        String filePathXml = "user_model_" + Strings.toRootLowerCase(user.getName()) + ".xml";
+        return processVideo(videoFilePath, filePathXml);
     }
 
     private void handlerFaceRecognized(Mat img, Rect rect, Mat frame) {
@@ -219,7 +310,7 @@ public class FaceDetectionService {
         int[] predictedLabel = new int[1];
         double[] confidence = new double[1];
         faceRecognizer.predict(img, predictedLabel, confidence);
-        if (confidence[0] > 50.0) {
+        if (confidence[0] < 50.0) {
             opencv_imgproc.rectangle(frame, new Point(rect.x(), rect.y()), new Point(rect.x() + rect.width(), rect.y() + rect.height()), new Scalar(0, 255, 0, 0));
             User userName = userService.getUserFromLabel(predictedLabel[0]);
             logger.info("Face detected: " + userName.getName() + " with confidant: " + confidence[0]);
@@ -247,7 +338,7 @@ public class FaceDetectionService {
             Mat resizedMat = new Mat();
             opencv_imgproc.resize(imageMat, resizedMat, new Size(200, 200));
 
-            /*frameDisplay.showInFrame(imageMat);*/
+            showInDisplay(imageMat);
 
             imageMats.add(imageMat);
             labels.add(user.getId().hashCode());
@@ -257,5 +348,11 @@ public class FaceDetectionService {
     private void saveTrainedModel(String userName) {
         String filePath = "user_model_" + Strings.toRootLowerCase(userName) + ".xml";
         faceRecognizer.save(filePath);
+    }
+
+    private void showInDisplay(Mat image) {
+        if (isShowVideo) {
+            frameDisplay.showInFrame(image);
+        }
     }
 }

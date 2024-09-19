@@ -3,10 +3,10 @@ package com.jm.futelove.commons;
 import org.bytedeco.opencv.opencv_core.Mat;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class VideoFrameDisplay {
+
     private JFrame frame;
     private JLabel imageLabel;
 

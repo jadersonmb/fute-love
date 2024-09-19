@@ -25,9 +25,9 @@ public class FaceDetectionController {
         return ResponseEntity.ok(faceDetectionService.detectFacesOpenCV(file));
     }
 
-    @PostMapping("/recognize")
-    public ResponseEntity<?> recognizeFace(@RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(faceDetectionService.recognizeFaceFromVideo(file));
+    @PostMapping("/recognize/{userId}")
+    public ResponseEntity<?> recognizeFace(@RequestParam("file") MultipartFile file, @PathVariable UUID userId) {
+        return ResponseEntity.ok(faceDetectionService.recognizeFaceFromVideo(file, userId));
     }
     @PostMapping("/recognize/image")
     public ResponseEntity<?> recognizeFaceImage(@RequestParam("file") MultipartFile file) throws IOException {
@@ -36,7 +36,12 @@ public class FaceDetectionController {
 
     @PostMapping("/train/model/{userId}")
     public ResponseEntity<?> trainModel(@PathVariable UUID userId) throws Exception {
-        return ResponseEntity.ok(faceDetectionService.trainModel(userId));
+        return ResponseEntity.ok(faceDetectionService.trainModelByUserId(userId));
+    }
+
+    @PostMapping("/train/model/byVideo/{userId}")
+    public ResponseEntity<?> trainModelByVideoAndUser(@RequestParam("file") MultipartFile file, @PathVariable UUID userId) throws Exception {
+        return ResponseEntity.ok(faceDetectionService.processVideoTrainByUser(file,userId));
     }
 
     @ExceptionHandler({FuteLoveException.class})

@@ -20,3 +20,4 @@ google:
 
 opencv:
   haarcascades-path: classpath:opencv/haarcascades/haarcascade_frontalface_alt.xml
+  show-video: true
