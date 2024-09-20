@@ -90,7 +90,7 @@ public class FaceDetectionService {
     }
 
     public Response recognizeImage(@RequestParam("file") MultipartFile file) throws IOException {
-        this.faceRecognizer.read("user_model_Neymar.xml");
+        this.faceRecognizer.read("user_model_jaderson.xml");
         /* Realizar reconhecimento*/
         handlerFaceRecognized(opencv_imgcodecs.imdecode(new Mat(file.getBytes()), opencv_imgcodecs.IMREAD_GRAYSCALE), new Rect(), new Mat());
         return Response.
@@ -151,6 +151,7 @@ public class FaceDetectionService {
         try {
 
             User userEntity = userService.findEntityById(userId);
+            int hashCodeUser = userEntity.getId().hashCode();
 
             Path tempVideoPath = Files.createTempFile(userEntity.getName(), ".mp4");
             Files.write(tempVideoPath, videoFilePath.getBytes());
@@ -166,6 +167,10 @@ public class FaceDetectionService {
 
             Mat frame = new Mat();
             Mat grayFrame = new Mat();
+
+            List<Mat> imageMats = new ArrayList<>();
+            List<Integer> labels = new ArrayList<>();
+
             while (videoCapture.read(frame)) {
                 /* Converte a imagem para grayscale e adiciona à lista de imagens*/
                 opencv_imgproc.cvtColor(frame, grayFrame, opencv_imgproc.COLOR_BGR2GRAY);
@@ -178,15 +183,30 @@ public class FaceDetectionService {
                     /* Recortar a região do rosto para reconhecimento
                      * logger.info("Face detected: " + rect); */
                     Mat face = new Mat(grayFrame, rect);
-
                     /* Redimensionar para o tamanho esperado pelo modelo treinado */
                     opencv_imgproc.resize(face, face, new Size(200, 200));
-                    trainModelByVideoAndByUser(face, userId);
-                    /*handlerFaceRecognized(face, rect, frame);*/
+
+                    imageMats.add(face);
+                    labels.add(hashCodeUser);
                 }
                 showInDisplay(frame);
             }
             videoCapture.release();
+
+            /* Converter a lista de imagens para MatVector*/
+            MatVector images = new MatVector(imageMats.size());
+            for (int i = 0; i < imageMats.size(); i++) {
+                images.put(i, imageMats.get(i));
+            }
+
+            /* Converter a lista de labels para um Mat do tipo CV_32SC1 (inteiros de 32 bits)*/
+            Mat labelsMat = new Mat(labels.size(), 1, opencv_core.CV_32SC1);
+            for (int i = 0; i < labels.size(); i++) {
+                labelsMat.ptr(i).putInt(labels.get(i));
+            }
+
+            faceRecognizer.train(images, labelsMat);
+            saveTrainedModel(userEntity.getName());
 
             return Response.builder().status(HttpStatus.OK.value()).message("Video processed successfully").build();
         } catch (Exception e) {
@@ -194,44 +214,6 @@ public class FaceDetectionService {
             ProblemType problemType = ProblemType.ERROR_VIDEO_PROCESS;
             throw new FuteLoveException(HttpStatus.BAD_REQUEST.value(), problemType.getUri(), problemType.getTitle(), "Error to process video: " + videoFilePath);
         }
-    }
-
-    @SneakyThrows
-    public Response trainModelByVideoAndByUser(Mat frame, UUID userId) {
-        User user = userService.findEntityById(userId);
-        int hashCodeUser = user.getId().hashCode();
-
-        List<Mat> imageMats = new ArrayList<>();
-        List<Integer> labels = new ArrayList<>();
-
-
-        /*Mat imageMat = opencv_imgcodecs.imdecode(new Mat(frame), opencv_imgcodecs.IMREAD_GRAYSCALE);*/
-
-        Mat resizedMat = new Mat();
-        opencv_imgproc.resize(frame, resizedMat, new Size(200, 200));
-
-        imageMats.add(resizedMat);
-        labels.add(user.getId().hashCode());
-
-        user.setHashCode(hashCodeUser);
-
-        /* Converter a lista de imagens para MatVector*/
-        MatVector images = new MatVector(imageMats.size());
-        for (int i = 0; i < imageMats.size(); i++) {
-            images.put(i, imageMats.get(i));
-        }
-
-        /* Converter a lista de labels para um Mat do tipo CV_32SC1 (inteiros de 32 bits)*/
-        Mat labelsMat = new Mat(labels.size(), 1, opencv_core.CV_32SC1);
-        for (int i = 0; i < labels.size(); i++) {
-            labelsMat.ptr(i).putInt(labels.get(i));
-        }
-
-        faceRecognizer.train(images, labelsMat);
-
-        saveTrainedModel(user.getName());
-
-        return Response.builder().status(HttpStatus.OK.value()).message("Model training by process video successfully for user: " + user.getName()).build();
     }
 
     @SneakyThrows
