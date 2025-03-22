@@ -1,4 +1,4 @@
-package com.jm.futelove.server.security;
+package com.jm.futelove.configuration.security;
 
 import com.jm.futelove.entity.Users;
 import com.jm.futelove.repository.UserRepository;

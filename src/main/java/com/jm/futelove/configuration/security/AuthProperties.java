@@ -1,4 +1,4 @@
-package com.jm.futelove.server.security;
+package com.jm.futelove.configuration.security;
 
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.boot.context.properties.ConfigurationProperties;
