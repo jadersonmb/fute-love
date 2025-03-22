@@ -21,23 +21,23 @@ public class ImageService {
 
     public ImageDTO save(ImageDTO imageDTO) {
         Image entity = mapper.toEntity(imageDTO);
-        entity.setUser(userService.findByEntityId(imageDTO.getUserId()));
+        entity.setUsers(userService.findByEntityId(imageDTO.getUserId()));
 
         return mapper.toDTO(repository.save(entity));
     }
 
     public ImageDTO findById(UUID id) {
         Image entity = repository.findById(id).orElseThrow(() -> new FuteLoveException("Not found image with id: " + id));
-        entity.setUser(userService.findByEntityId(entity.getId()));
+        entity.setUsers(userService.findByEntityId(entity.getId()));
 
         return mapper.toDTO(entity);
     }
 
     public List<Image> findByUserId(UUID userId) {
-        return repository.findByUserId(userId);
+        return repository.findByUsersId(userId);
     }
 
     public void updateImage(Image entity) {
-        repository.saveAndFlush(entity);
+        repository.save(entity);
     }
 }

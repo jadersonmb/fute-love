@@ -4,6 +4,7 @@ import com.jm.futelove.dto.UserDTO;
 import com.jm.futelove.execption.FuteLoveException;
 import com.jm.futelove.execption.Problem;
 import com.jm.futelove.services.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,7 @@ import java.util.Objects;
 @RestController
 @RequestMapping("/api/v1/users")
 @AllArgsConstructor
+@Tag(name = "Users", description = "Operations about users")
 public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);

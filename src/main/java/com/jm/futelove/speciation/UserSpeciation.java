@@ -1,7 +1,7 @@
 package com.jm.futelove.speciation;
 
 import com.jm.futelove.dto.UserDTO;
-import com.jm.futelove.entity.User;
+import com.jm.futelove.entity.Users;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -11,7 +11,7 @@ import java.util.Objects;
 
 public class UserSpeciation {
 
-    public static Specification<User> search(UserDTO filter) {
+    public static Specification<Users> search(UserDTO filter) {
         return (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (Objects.nonNull(filter.getName()) && !filter.getName().isEmpty()) {

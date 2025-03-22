@@ -5,12 +5,17 @@ spring:
     url: jdbc:mariadb://localhost:3306/futelove?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
     password: root
+    #url: {{SPRING_DATASOURCE_URL}}
+    #username: {{SPRING_DATASOURCE_USERNAME}}
+    #password: {{SPRING_DATASOURCE_PASSWORD}}
     driver-class-name: org.mariadb.jdbc.Driver
   servlet:
     multipart:
       max-file-size: 100MB
       max-request-size: 100MB
-
+  sql:
+    init:
+      mode: always
 google:
   cloud:
     connection-timeout: 60000
@@ -18,6 +23,39 @@ google:
     security-key-file: rising-daylight-435322-s8-c6f36cea5e36.json
     bucketName: fute-love-media
 
+security:
+  oauth2:
+    client:
+      registration:
+        Futelove:
+          provider: Futelove
+          client-id: Futelove
+          client-secret: 4ICvE=Qejwort0LcRBQPC)Xna
+          authorization-grant-type: client_credentials
+          redirect-uri: https://oidcdebugger.com/debug
+          scope: posts:write
+      provider:
+        Futelove:
+          authorization-uri: http://localhost:8080/oauth2/authorize
+          token-uri: http://localhost:8080/oauth2/token
+          user-info-uri: http://localhost:8080/userinfo
+          user-name-attribute: sub
+
 opencv:
   haarcascades-path: classpath:opencv/haarcascades/haarcascade_frontalface_alt.xml
   show-video: true
+aw:
+  auth:
+    provider-uri: "http://localhost:8080"
+    jks:
+      keypass: administrator
+      storepass: administrator
+      alias: futelove
+      path: keystore/futelove.jks
+
+logging:
+  level:
+    org:
+      springframework:
+      security: 'DEBUG'
+      web: 'DEBUG'

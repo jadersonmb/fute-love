@@ -4,10 +4,9 @@ import com.flickr4java.flickr.photos.Photo;
 import com.flickr4java.flickr.photos.PhotoList;
 import com.jm.futelove.commons.Commons;
 import com.jm.futelove.commons.FlickrDownloader;
-import com.jm.futelove.commons.VideoFrameDisplay;
 import com.jm.futelove.controllers.GoogleStorageController;
 import com.jm.futelove.entity.Image;
-import com.jm.futelove.entity.User;
+import com.jm.futelove.entity.Users;
 import com.jm.futelove.execption.FuteLoveException;
 import com.jm.futelove.execption.ProblemType;
 import com.jm.futelove.execption.Response;
@@ -54,7 +53,7 @@ public class FaceDetectionService {
 
     private final UserService userService;
     private final ImageService imageService;
-    private final VideoFrameDisplay frameDisplay = new VideoFrameDisplay();
+    //private final VideoFrameDisplay frameDisplay = new VideoFrameDisplay();
     private final FlickrDownloader flickrDownloader = new FlickrDownloader();
 
     public FaceDetectionService(UserService userService, ImageService imageService) {
@@ -150,10 +149,10 @@ public class FaceDetectionService {
     public Response processVideoTrainByUser(MultipartFile videoFilePath, UUID userId) {
         try {
 
-            User userEntity = userService.findEntityById(userId);
-            int hashCodeUser = userEntity.getId().hashCode();
+            Users users = userService.findEntityById(userId);
+            int hashCodeUser = users.getId().hashCode();
 
-            Path tempVideoPath = Files.createTempFile(userEntity.getName(), ".mp4");
+            Path tempVideoPath = Files.createTempFile(users.getName(), ".mp4");
             Files.write(tempVideoPath, videoFilePath.getBytes());
 
             /* Abrir o vídeo */
@@ -206,7 +205,7 @@ public class FaceDetectionService {
             }
 
             faceRecognizer.train(images, labelsMat);
-            saveTrainedModel(userEntity.getName());
+            saveTrainedModel(users.getName());
 
             return Response.builder().status(HttpStatus.OK.value()).message("Video processed successfully").build();
         } catch (Exception e) {
@@ -218,13 +217,13 @@ public class FaceDetectionService {
 
     @SneakyThrows
     public Response trainModelByUserId(UUID userId) {
-        User user = userService.findEntityById(userId);
-        int hashCodeUser = user.getId().hashCode();
+        Users users = userService.findEntityById(userId);
+        int hashCodeUser = users.getId().hashCode();
         List<Image> userImages = imageService.findByUserId(userId);
 
         if (userImages.isEmpty()) {
             ProblemType problemType = ProblemType.IMAGE_NOT_FOUND;
-            throw new FuteLoveException(HttpStatus.BAD_REQUEST.value(), problemType.getTitle(), problemType.getUri(), "Image not found for user: " + user.getId());
+            throw new FuteLoveException(HttpStatus.BAD_REQUEST.value(), problemType.getTitle(), problemType.getUri(), "Image not found for user: " + users.getId());
         }
 
         List<Mat> imageMats = new ArrayList<>();
@@ -240,11 +239,11 @@ public class FaceDetectionService {
             opencv_imgproc.resize(imageMat, resizedMat, new Size(200, 200));
 
             imageMats.add(resizedMat);
-            labels.add(user.getId().hashCode());
+            labels.add(users.getId().hashCode());
         };
 
-        user.setHashCode(hashCodeUser);
-        userService.updateUserEntity(user);
+        users.setHashCode(hashCodeUser);
+        userService.updateUserEntity(users);
 
         /* Converter a lista de imagens para MatVector*/
         MatVector images = new MatVector(imageMats.size());
@@ -260,12 +259,12 @@ public class FaceDetectionService {
 
         faceRecognizer.train(images, labelsMat);
 
-        saveTrainedModel(user.getName());
+        saveTrainedModel(users.getName());
 
-        return Response.builder().status(HttpStatus.OK.value()).message("Model training successfully for user: " + user.getName()).build();
+        return Response.builder().status(HttpStatus.OK.value()).message("Model training successfully for user: " + users.getName()).build();
     }
 
-    private void getImgFromInternet(String query, List<Mat> imageMats, List<Integer> labels, User user) {
+    private void getImgFromInternet(String query, List<Mat> imageMats, List<Integer> labels, Users users) {
         PhotoList<Photo> photos = flickrDownloader.getImageWithQuery(query, 50);
         photos.forEach(photo -> {
             try {
@@ -274,7 +273,7 @@ public class FaceDetectionService {
                 opencv_imgproc.resize(imageMat, resizedMat, new Size(200, 200));
 
                 imageMats.add(imageMat);
-                labels.add(user.getId().hashCode());
+                labels.add(users.getId().hashCode());
             } catch (Exception e) {
                 logger.error("Error to download image: " + e.getMessage());
             }
@@ -282,8 +281,8 @@ public class FaceDetectionService {
     }
 
     public Response recognizeFaceFromVideo(MultipartFile videoFilePath, UUID userId) {
-        User user = userService.findEntityById(userId);
-        String filePathXml = "user_model_" + Strings.toRootLowerCase(user.getName()) + ".xml";
+        Users users = userService.findEntityById(userId);
+        String filePathXml = "user_model_" + Strings.toRootLowerCase(users.getName()) + ".xml";
         return processVideo(videoFilePath, filePathXml);
     }
 
@@ -294,8 +293,8 @@ public class FaceDetectionService {
         faceRecognizer.predict(img, predictedLabel, confidence);
         if (confidence[0] < 50.0) {
             opencv_imgproc.rectangle(frame, new Point(rect.x(), rect.y()), new Point(rect.x() + rect.width(), rect.y() + rect.height()), new Scalar(0, 255, 0, 0));
-            User userName = userService.getUserFromLabel(predictedLabel[0]);
-            logger.info("Face detected: " + userName.getName() + " with confidant: " + confidence[0]);
+            Users usersName = userService.getUserFromLabel(predictedLabel[0]);
+            logger.info("Face detected: " + usersName.getName() + " with confidant: " + confidence[0]);
         }
     }
 
@@ -313,17 +312,17 @@ public class FaceDetectionService {
     }
 
 
-    private void getAllImgByUserForTrain(User user, List<Mat> imageMats, List<Integer> labels) throws IOException {
-        Commons.downloadImageStorageByFolder(BUCKET_NAME, user.getId().toString()).forEach(imageBytes -> {
+    private void getAllImgByUserForTrain(Users users, List<Mat> imageMats, List<Integer> labels) throws IOException {
+        Commons.downloadImageStorageByFolder(BUCKET_NAME, users.getId().toString()).forEach(imageBytes -> {
             Mat imageMat = opencv_imgcodecs.imdecode(new Mat(imageBytes), opencv_imgcodecs.IMREAD_GRAYSCALE);
             /* Redimensionar para um tamanho fixo (exemplo: 200x200) */
             Mat resizedMat = new Mat();
             opencv_imgproc.resize(imageMat, resizedMat, new Size(200, 200));
 
-            showInDisplay(imageMat);
+            //showInDisplay(imageMat);
 
             imageMats.add(imageMat);
-            labels.add(user.getId().hashCode());
+            labels.add(users.getId().hashCode());
         });
     }
 
@@ -334,7 +333,7 @@ public class FaceDetectionService {
 
     private void showInDisplay(Mat image) {
         if (isShowVideo) {
-            frameDisplay.showInFrame(image);
+           // frameDisplay.showInFrame(image);
         }
     }
 }

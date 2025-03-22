@@ -17,7 +17,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+@Table(name = "user_entity")
+public class Users {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -38,8 +39,15 @@ public class User {
     private String email;
     private int hashCode;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private String password;
+    @Enumerated(EnumType.STRING)
+    private Type type;
+
+    @OneToMany(mappedBy = "users", cascade = CascadeType.ALL)
     private List<Image> imagens = new ArrayList<>();
 
+    public enum Type {
+        ADMIN, CLIENT;
+    }
 }
 

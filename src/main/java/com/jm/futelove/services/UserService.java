@@ -1,13 +1,12 @@
 package com.jm.futelove.services;
 
 import com.jm.futelove.dto.UserDTO;
-import com.jm.futelove.entity.User;
+import com.jm.futelove.entity.Users;
 import com.jm.futelove.execption.FuteLoveException;
 import com.jm.futelove.execption.ProblemType;
 import com.jm.futelove.mappers.UserMapper;
 import com.jm.futelove.repository.UserRepository;
 import com.jm.futelove.speciation.UserSpeciation;
-import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -43,9 +42,9 @@ public class UserService {
         return mapper.toDTO(repository.save(mapper.toEntity(dto)));
     }
 
-    public User findByEntityId(UUID id) throws FuteLoveException {
+    public Users findByEntityId(UUID id) throws FuteLoveException {
         ProblemType problemType = ProblemType.USER_NOT_EXISTS;
-        Optional<User> obj = repository.findById(id);
+        Optional<Users> obj = repository.findById(id);
         String messageDetails = messageSource.getMessage(problemType.getMessageSource(), new Object[]{""}, LocaleContextHolder.getLocale());
         return obj.orElseThrow(() -> new FuteLoveException(HttpStatus.BAD_REQUEST.value(),
                 problemType.getTitle(), problemType.getUri(), messageDetails));
@@ -53,16 +52,16 @@ public class UserService {
 
     public UserDTO findById(UUID id) throws FuteLoveException {
         ProblemType problemType = ProblemType.USER_NOT_EXISTS;
-        Optional<User> obj = repository.findById(id);
+        Optional<Users> obj = repository.findById(id);
         String messageDetails = messageSource.getMessage(problemType.getMessageSource(), new Object[]{""}, LocaleContextHolder.getLocale());
         return mapper
                 .toDTO(obj.orElseThrow(() -> new FuteLoveException(HttpStatus.BAD_REQUEST.value(),
                         problemType.getTitle(), problemType.getUri(), messageDetails)));
     }
 
-    public User findEntityById(UUID id) throws FuteLoveException {
+    public Users findEntityById(UUID id) throws FuteLoveException {
         ProblemType problemType = ProblemType.USER_NOT_EXISTS;
-        Optional<User> obj = repository.findById(id);
+        Optional<Users> obj = repository.findById(id);
         String messageDetails = messageSource.getMessage(problemType.getMessageSource(), new Object[]{""}, LocaleContextHolder.getLocale());
         return obj.orElseThrow(() -> new FuteLoveException(HttpStatus.BAD_REQUEST.value(),
                 problemType.getTitle(), problemType.getUri(), messageDetails));
@@ -72,11 +71,11 @@ public class UserService {
         return mapper.toDTO(repository.save(mapper.toEntity(dto)));
     }
 
-    public UserDTO updateUserEntity(User entity) {
+    public UserDTO updateUserEntity(Users entity) {
         return mapper.toDTO(repository.save(mapper.toUpdate(entity)));
     }
 
-    public User getUserFromLabel(int hasCode) {
+    public Users getUserFromLabel(int hasCode) {
         return repository.findByHashCode(hasCode);
     }
 }

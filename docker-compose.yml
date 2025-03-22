@@ -1,0 +1,38 @@
+services:
+  db:
+    image: mariadb
+    restart: always
+    environment:
+      TZ: Lisbon/Europe
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: fute-love
+      MARIADB_USER: root
+      MARIADB_PASSWORD: root
+    ports:
+      - 3306:3308
+    expose:
+      - 3306
+    networks:
+      - fute-love-network
+  docker-app:
+    image: jadersonmorais/fute-love
+    restart: always
+    build:
+      ./
+    working_dir: /
+    environment:
+      TZ: Lisbon/Europe
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/fute-love?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    ports:
+      - 8080:8080
+    command:
+      - mvn spring-boot:run
+    depends_on:
+      - db
+    networks:
+      - fute-love-network
+networks:
+  fute-love-network:
+    driver: bridge
