@@ -19,7 +19,9 @@ public enum ProblemType {
     ERROR_UPLOAD_FILE("/error-upload", "Error to uploading file", "error_upload_file"),
     ERROR_FACE_DETECTED("/error-face-detected", "Error to detected file", "error_detected_file"),
     ERROR_VIDEO_PROCESS("/error-video-process", "Error to process video file", "error_process_video_file"),
-    ERROR_DOWNLOAD_FILE("/error-download", "Error to download file", "error_download_file");
+    ERROR_DOWNLOAD_FILE("/error-download", "Error to download file", "error_download_file"),
+    ERROR_GEMINI("/gemini-chat","Error to chat with Gemini" , "error_gemini_chat" ),
+    PERSON_NOT_EXISTS("/person-not-exists", "Person not found", "person.not.exists");
 
     private String uri;
     private String title;

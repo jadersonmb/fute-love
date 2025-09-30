@@ -36,12 +36,23 @@ public class Users {
     private UUID id;
 
     private String name;
+    private String lastName;
     private String email;
     private int hashCode;
 
     private String password;
     @Enumerated(EnumType.STRING)
     private Type type;
+
+    private String documentNumber; // e.g. passport, ID card
+    private String phoneNumber;
+
+    private String street;
+    private String city;
+    private String state;
+    private String postalCode;
+    private String country;
+
 
     @OneToMany(mappedBy = "users", cascade = CascadeType.ALL)
     private List<Image> imagens = new ArrayList<>();

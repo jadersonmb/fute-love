@@ -39,7 +39,9 @@ public class UserService {
     }
 
     public UserDTO createUser(UserDTO dto) {
-        return mapper.toDTO(repository.save(mapper.toEntity(dto)));
+        Users entity = mapper.toEntity(dto);
+        entity.setType(Users.Type.CLIENT);
+        return mapper.toDTO(repository.save(entity));
     }
 
     public Users findByEntityId(UUID id) throws FuteLoveException {

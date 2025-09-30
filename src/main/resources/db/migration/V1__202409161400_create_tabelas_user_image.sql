@@ -5,6 +5,14 @@ CREATE TABLE IF NOT EXISTS user_entity (
     email VARCHAR(255) NOT NULL,
     type VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
+    last_name varchar(150),
+    document_number varchar(100),
+    phone_number varchar(50),
+    street varchar(255),
+    city varchar(150),
+    state varchar(150),
+    postal_code varchar(20),
+    country varchar(100),
     CONSTRAINT UC_user_email UNIQUE (email)  -- Garante que o email seja único
 );
 
