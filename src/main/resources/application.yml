@@ -3,8 +3,8 @@ spring:
     name: FuteLove
   datasource:
     url: jdbc:mariadb://localhost:3306/futelove?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: root
+ #   username:
+ #   password:
     #url: {{SPRING_DATASOURCE_URL}}
     #username: {{SPRING_DATASOURCE_USERNAME}}
     #password: {{SPRING_DATASOURCE_PASSWORD}}
@@ -22,6 +22,27 @@ google:
     read-timeout: 60000
     security-key-file: rising-daylight-435322-s8-c6f36cea5e36.json
     bucketName: fute-love-media
+
+# API Configuration
+#deepseek:
+#  api:
+#    url: https://api.deepseek.com/v1/chat/completions
+#    key:
+
+# Gemini API
+#gemini:
+#  api:
+#    key:
+#    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={apiKey}
+
+# WhatsApp API
+#whatsapp:
+#  phone:
+#    number:
+#      id:
+#  api:
+#    url: https://graph.facebook.com/v22.0/{phoneNumberId}/messages
+ #   token:
 
 security:
   oauth2:
